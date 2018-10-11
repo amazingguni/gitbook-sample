@@ -6,58 +6,8 @@ jobs:
     working_directory: ~/repo
     steps:
       - checkout
+      - setup_remote_docker
       - run: 
           command: |
-            # gitbook cli 설치
-            sudo npm install -g gitbook-cli
-            gitbook install
-            gitbook build
-      - save_cache:
-          # deploy에 빌드 결과물(_book)을 포함한 workspace를 캐싱해 전달합니다.
-          key: v1-repo-{{ .Environment.CIRCLE_SHA1 }}
-          paths:
-            - ~/repo
-  deploy:
-    docker:
-      - image: circleci/node:8.12
-    working_directory: ~/repo
-    steps:
-      - restore_cache:
-          # 이전 step에서 저장한 캐시를 읽어옵니다.
-          key: v1-repo-{{ .Environment.CIRCLE_SHA1 }}
-      - run: 
-          command: |
-            # gh-pages에 push하기 위해 github 관련 설정을 진행합니다.
-            # master에 commit한 author의 정보를 그대로 사용합니다.
-            git config --global user.email "$(git log --format='%ae' $CIRCLE_SHA1^!)"
-            git config --global user.name "$(git log --format='%an' $CIRCLE_SHA1^!)"
-            # push를 위해 ph-pages로 전환합니다.
-            git checkout gh-pages
-            # 빌드 결과물을 root로 이동시킵니다.
-            cp -R _book/* .
-            # _book directory를 삭제합니다
-            git clean -fx _book
-            # gh-pages로 commit/push합니다.
-            # 이 때, environment로 전달한 TOKEN을 사용합니다.
-            git add .
-            git commit -am "Update docs"
-            git push -q -f https://${GITHUB_PERSONAL_TOKEN}@github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}.git gh-pages
-    
-workflows:
-  version: 2
-  build_deploy:
-    jobs:
-      - build:
-          # gh-pages는 빌드할 필요가 없어 예외처리합니다.
-          filters:
-            branches:
-              ignore:
-                - gh-pages
-      - deploy:
-          requires:
-            - build
-          # deploy step은 master branch일 때만 실행합니다.
-          filters:
-            branches:
-              only:
-                - master
+            docker info
+      
